@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fondo de Emergencias - Finanzas Personales</title>
+    <link href="../assets/style.css" rel="stylesheet">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #10b981;
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8rem;
+            line-height: 20px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" style="padding-top: 40px;">
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+        </a>
+
+        <h2 class="section-title" style="margin-top: 0;">Fondo de Emergencias</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Planifica tu red de seguridad financiera. Lo ideal es tener ahorrado el equivalente a 3 a 6 meses de tus gastos esenciales para imprevistos (pérdida de empleo, emergencias médicas).</p>
+        
+        <div class="calculator-container" style="grid-template-columns: 1fr 1fr;">
+            <div class="calculator-form">
+                
+                <div class="input-group">
+                    <label for="essentialExpenses">Gastos Esenciales Mensuales</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="essentialExpenses" value="2.000.000" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Lo estrictamente necesario: vivienda, servicios, comida.</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="safetyMonths">Meses de Seguridad (Meta)</label>
+                    <div class="input-wrapper">
+                        <select id="safetyMonths" style="width: 100%;">
+                            <option value="3">3 Meses (Mínimo)</option>
+                            <option value="6" selected>6 Meses (Recomendado)</option>
+                            <option value="12">12 Meses (Muy Seguro)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 30px;">
+                    <label for="currentSavings">Ahorro Actual (Para Emergencias)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="currentSavings" value="1.500.000" class="input-with-prefix">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="monthlySavings">Aporte de Ahorro Mensual</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="monthlySavings" value="300.000" class="input-with-prefix">
+                    </div>
+                </div>
+                
+                <button id="calculateBtn" class="btn" style="margin-top: 20px;">Calcular Plan</button>
+            </div>
+
+            <div class="results-panel" style="justify-content: flex-start; gap: 15px; background: linear-gradient(145deg, #047857, #065f46);">
+                <div class="result-card">
+                    <div class="result-title">Meta Total del Fondo</div>
+                    <div class="result-value" id="targetFundResult" style="font-size: 1.8rem;">$0</div>
+                </div>
+                
+                <div class="result-card" style="background: rgba(255,255,255,0.1); border-color: transparent;">
+                    <div class="result-title">Progreso Actual</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                        <div class="progress-text" id="progressText">0%</div>
+                    </div>
+                </div>
+
+                <div class="result-card highlight" style="margin-top: auto; background: rgba(255,255,255,0.15);">
+                    <div class="result-title">Tiempo Estimado para Alcanzar la Meta</div>
+                    <div class="result-value" id="monthsToTargetResult" style="font-size: 2.2rem; color: #a7f3d0;">0 Meses</div>
+                    <p id="remainingAmountText" style="margin: 5px 0 0; font-size: 0.9rem;">Faltan $0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const essentialExpensesInput = document.getElementById('essentialExpenses');
+            const safetyMonthsSelect = document.getElementById('safetyMonths');
+            const currentSavingsInput = document.getElementById('currentSavings');
+            const monthlySavingsInput = document.getElementById('monthlySavings');
+            const calculateBtn = document.getElementById('calculateBtn');
+
+            const targetFundResult = document.getElementById('targetFundResult');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const monthsToTargetResult = document.getElementById('monthsToTargetResult');
+            const remainingAmountText = document.getElementById('remainingAmountText');
+
+            // Format number as currency
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            };
+
+            // Input formatting
+            const setupNumberInput = (inputEl) => {
+                inputEl.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value === '') {
+                        e.target.value = '';
+                        return;
+                    }
+                    const numValue = parseInt(value, 10);
+                    e.target.value = new Intl.NumberFormat('es-CO').format(numValue);
+                });
+            };
+
+            setupNumberInput(essentialExpensesInput);
+            setupNumberInput(currentSavingsInput);
+            setupNumberInput(monthlySavingsInput);
+
+            // Get numeric value
+            const getNum = (inputEl) => {
+                const val = inputEl.value.replace(/\D/g, '');
+                return val ? parseInt(val, 10) : 0;
+            };
+
+            const calculateEmergencyFund = () => {
+                const essentialExpenses = getNum(essentialExpensesInput);
+                const safetyMonths = parseInt(safetyMonthsSelect.value, 10);
+                const currentSavings = getNum(currentSavingsInput);
+                const monthlySavings = getNum(monthlySavingsInput);
+
+                if (essentialExpenses <= 0) {
+                    alert('Por favor, ingrese un valor de gastos válido.');
+                    return;
+                }
+
+                const targetFund = essentialExpenses * safetyMonths;
+                
+                let progressPercent = (currentSavings / targetFund) * 100;
+                if (progressPercent > 100) progressPercent = 100;
+                
+                let remainingAmount = targetFund - currentSavings;
+                if (remainingAmount < 0) remainingAmount = 0;
+
+                let monthsToTarget = 0;
+                if (remainingAmount > 0) {
+                    if (monthlySavings > 0) {
+                        monthsToTarget = Math.ceil(remainingAmount / monthlySavings);
+                    } else {
+                        monthsToTarget = Infinity; // Nunca lo alcanzará si no ahorra
+                    }
+                }
+
+                // Update UI
+                targetFundResult.textContent = formatCurrency(targetFund);
+                
+                // Progress bar
+                setTimeout(() => {
+                    progressBar.style.width = progressPercent.toFixed(1) + '%';
+                    progressText.textContent = progressPercent.toFixed(1) + '%';
+                }, 100); // slight delay for animation
+                
+                if (remainingAmount === 0) {
+                    monthsToTargetResult.textContent = "¡Meta Alcanzada!";
+                    remainingAmountText.textContent = "¡Felicidades! Tienes tu fondo completo.";
+                } else if (monthsToTarget === Infinity) {
+                    monthsToTargetResult.textContent = "Indefinido";
+                    monthsToTargetResult.style.fontSize = "1.5rem";
+                    remainingAmountText.textContent = `Faltan ${formatCurrency(remainingAmount)} - Debes hacer aportes.`;
+                } else {
+                    const text = monthsToTarget === 1 ? "1 Mes" : `${monthsToTarget} Meses`;
+                    monthsToTargetResult.textContent = text;
+                    monthsToTargetResult.style.fontSize = "2.2rem";
+                    remainingAmountText.textContent = `Faltan ${formatCurrency(remainingAmount)}`;
+                }
+            };
+
+            calculateBtn.addEventListener('click', calculateEmergencyFund);
+
+            // Init
+            calculateEmergencyFund();
+        });
+    </script>
+</body>
+
+</html>

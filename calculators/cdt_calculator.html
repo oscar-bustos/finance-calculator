@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de CDT - Finanzas Personales</title>
+    <link href="../assets/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container" style="padding-top: 40px;">
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+        </a>
+
+        <h2 class="section-title" style="margin-top: 0;">Calculadora de CDT / Inversión Fija</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Calcula los rendimientos reales de tu Certificado de Depósito a Término, incluyendo la deducción legal del 7% por Retención en la Fuente sobre rendimientos financieros.</p>
+        
+        <div class="calculator-container" style="grid-template-columns: 1fr 1fr;">
+            <div class="calculator-form">
+                
+                <div class="input-group">
+                    <label for="investmentAmount">Monto de Inversión</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="investmentAmount" value="10.000.000" class="input-with-prefix">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="interestEA">Tasa Efectiva Anual (EA)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="interestEA" value="11" step="0.1" class="input-with-suffix">
+                        <span class="input-suffix">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="term">Plazo del CDT</label>
+                    <div class="input-wrapper" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <input type="number" id="term" value="180">
+                        </div>
+                        <select id="termType" style="flex: 1.5;">
+                            <option value="days">Días</option>
+                            <option value="months">Meses</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button id="calculateBtn" class="btn" style="margin-top: 20px;">Calcular Rendimientos</button>
+            </div>
+
+            <div class="results-panel" style="justify-content: flex-start; gap: 15px; background: linear-gradient(145deg, #1d4ed8, #2563eb);">
+                <div class="result-card">
+                    <div class="result-title">Rendimiento Bruto Ganado</div>
+                    <div class="result-value" id="grossYieldResult" style="font-size: 1.6rem;">$0</div>
+                </div>
+                <div class="result-card" style="border-color: rgba(255,0,0,0.3); background: rgba(0,0,0,0.1);">
+                    <div class="result-title">Retención en la Fuente (7%)</div>
+                    <div class="result-value" id="taxResult" style="font-size: 1.4rem; color: #fca5a5;">-$0</div>
+                </div>
+                <div class="result-card highlight" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">
+                    <div class="result-title">Rendimiento Neto a Recibir</div>
+                    <div class="result-value" id="netYieldResult" style="font-size: 1.8rem; color: #a7f3d0;">+$0</div>
+                </div>
+                <div class="result-card" style="margin-top: auto;">
+                    <div class="result-title">Total al Vencimiento (Capital + Rendimiento)</div>
+                    <div class="result-value" id="totalMaturityResult" style="font-size: 2.1rem; font-weight: bold;">$0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const investmentAmountInput = document.getElementById('investmentAmount');
+            const interestEAInput = document.getElementById('interestEA');
+            const termInput = document.getElementById('term');
+            const termTypeSelect = document.getElementById('termType');
+            const calculateBtn = document.getElementById('calculateBtn');
+
+            const grossYieldResult = document.getElementById('grossYieldResult');
+            const taxResult = document.getElementById('taxResult');
+            const netYieldResult = document.getElementById('netYieldResult');
+            const totalMaturityResult = document.getElementById('totalMaturityResult');
+
+            // Format number as currency
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            };
+
+            // Input formatting
+            const setupNumberInput = (inputEl) => {
+                inputEl.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value === '') {
+                        e.target.value = '';
+                        return;
+                    }
+                    const numValue = parseInt(value, 10);
+                    e.target.value = new Intl.NumberFormat('es-CO').format(numValue);
+                });
+            };
+
+            setupNumberInput(investmentAmountInput);
+
+            // Get numeric value
+            const getNum = (inputEl) => {
+                const val = inputEl.value.replace(/\D/g, '');
+                return val ? parseInt(val, 10) : 0;
+            };
+
+            const calculateCDT = () => {
+                const principal = getNum(investmentAmountInput);
+                const rateEA = parseFloat(interestEAInput.value);
+                const termValue = parseInt(termInput.value, 10);
+
+                if (isNaN(rateEA) || isNaN(termValue) || principal <= 0 || rateEA < 0 || termValue <= 0) {
+                    alert('Por favor, ingrese valores válidos.');
+                    return;
+                }
+
+                // Cálculo de interés compuesto diario/mensual
+                const ea = rateEA / 100;
+                let days = termTypeSelect.value === 'days' ? termValue : termValue * 30; // base 360 días
+                
+                // Fórmula: Capital * ((1 + EA)^(dias/360) - 1)
+                const grossYield = principal * (Math.pow(1 + ea, days / 360) - 1);
+                
+                // Retefuente 7% sobre rendimientos financieros (Ley colombiana)
+                const tax = grossYield * 0.07;
+                
+                const netYield = grossYield - tax;
+                const totalMaturity = principal + netYield;
+
+                grossYieldResult.textContent = formatCurrency(grossYield);
+                taxResult.textContent = "-" + formatCurrency(tax);
+                netYieldResult.textContent = "+" + formatCurrency(netYield);
+                totalMaturityResult.textContent = formatCurrency(totalMaturity);
+            };
+
+            calculateBtn.addEventListener('click', calculateCDT);
+
+            // Init
+            calculateCDT();
+        });
+    </script>
+</body>
+
+</html>

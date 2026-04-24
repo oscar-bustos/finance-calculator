@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capacidad de Endeudamiento - Finanzas Personales</title>
+    <link href="../assets/style.css" rel="stylesheet">
+    <style>
+        .health-indicator {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: white;
+            transition: var(--transition);
+        }
+        .health-good { background-color: #10b981; }
+        .health-warning { background-color: #f59e0b; }
+        .health-danger { background-color: #ef4444; }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" style="padding-top: 40px;">
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+        </a>
+
+        <h2 class="section-title" style="margin-top: 0;">Capacidad de Endeudamiento</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Descubre cuánto dinero podrías destinar al pago de nuevas deudas sin comprometer tu salud financiera. Se recomienda no exceder el 30% - 40% de tus ingresos netos en pago de deudas.</p>
+        
+        <div class="calculator-container" style="grid-template-columns: 1fr 1fr;">
+            <div class="calculator-form">
+                
+                <h3 style="font-size: 1.1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-top: 0;">1. Ingresos y Gastos de Subsistencia</h3>
+                <div class="input-group" style="margin-top: 15px;">
+                    <label for="netIncome">Ingreso Mensual Neto</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="netIncome" value="3.500.000" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Lo que recibes después de deducciones legales.</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="fixedExpenses">Gastos Fijos Mensuales (Arriendo, Comida, etc.)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="fixedExpenses" value="1.500.000" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Gastos esenciales para vivir. No incluyas cuotas de deudas aquí.</span>
+                </div>
+
+                <h3 style="font-size: 1.1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-top: 30px;">2. Deudas Actuales</h3>
+                <div class="input-group" style="margin-top: 15px;">
+                    <label for="currentDebts">Cuotas Mensuales Totales de Deudas</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="currentDebts" value="500.000" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Suma de las cuotas de créditos, tarjetas de crédito, etc.</span>
+                </div>
+                
+                <button id="calculateBtn" class="btn" style="margin-top: 20px;">Evaluar Salud Financiera</button>
+            </div>
+
+            <div class="results-panel" style="justify-content: flex-start; gap: 15px; background: linear-gradient(145deg, #4b5563, #374151);">
+                <div class="result-card">
+                    <div class="result-title">Ingreso Disponible (Libre)</div>
+                    <div class="result-value" id="disposableIncomeResult" style="font-size: 1.8rem;">$0</div>
+                    <p style="margin: 5px 0 0; font-size: 0.85rem; opacity: 0.8;">Ingresos - Gastos Fijos - Deudas</p>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Ratio de Endeudamiento Actual</div>
+                    <div class="result-value" id="debtRatioResult" style="font-size: 2.2rem; font-weight: bold;">0%</div>
+                </div>
+                <div class="result-card highlight" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">
+                    <div class="result-title">Nueva Capacidad de Pago Mensual Recomendada</div>
+                    <div class="result-value" id="availableCapacityResult" style="font-size: 1.5rem;">$0</div>
+                    <p style="margin: 5px 0 0; font-size: 0.85rem; opacity: 0.8;">Monto extra seguro que puedes destinar a cuotas.</p>
+                </div>
+                
+                <div id="healthIndicator" class="health-indicator health-good">
+                    Salud Financiera Excelente
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const netIncomeInput = document.getElementById('netIncome');
+            const fixedExpensesInput = document.getElementById('fixedExpenses');
+            const currentDebtsInput = document.getElementById('currentDebts');
+            const calculateBtn = document.getElementById('calculateBtn');
+
+            const disposableIncomeResult = document.getElementById('disposableIncomeResult');
+            const debtRatioResult = document.getElementById('debtRatioResult');
+            const availableCapacityResult = document.getElementById('availableCapacityResult');
+            const healthIndicator = document.getElementById('healthIndicator');
+
+            // Format number as currency
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            };
+
+            // Input formatting
+            const setupNumberInput = (inputEl) => {
+                inputEl.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value === '') {
+                        e.target.value = '';
+                        return;
+                    }
+                    const numValue = parseInt(value, 10);
+                    e.target.value = new Intl.NumberFormat('es-CO').format(numValue);
+                });
+            };
+
+            setupNumberInput(netIncomeInput);
+            setupNumberInput(fixedExpensesInput);
+            setupNumberInput(currentDebtsInput);
+
+            // Get numeric value
+            const getNum = (inputEl) => {
+                const val = inputEl.value.replace(/\D/g, '');
+                return val ? parseInt(val, 10) : 0;
+            };
+
+            const calculateCapacity = () => {
+                const netIncome = getNum(netIncomeInput);
+                const fixedExpenses = getNum(fixedExpensesInput);
+                const currentDebts = getNum(currentDebtsInput);
+
+                if (netIncome <= 0) {
+                    alert('Por favor ingresa un ingreso mensual válido.');
+                    return;
+                }
+
+                // Disponible real hoy en día
+                const disposableIncome = netIncome - fixedExpenses - currentDebts;
+                
+                // Ratio de endeudamiento (Qué porcentaje del ingreso neto se va en deudas)
+                const debtRatio = (currentDebts / netIncome) * 100;
+                
+                // Capacidad ideal (35% del ingreso neto es el tope recomendado para deudas)
+                const maxRecommendedDebtPayment = netIncome * 0.35;
+                let availableCapacity = maxRecommendedDebtPayment - currentDebts;
+                
+                // Si la capacidad disponible es mayor que el ingreso libre, el tope es el ingreso libre real.
+                if (availableCapacity > disposableIncome) {
+                    availableCapacity = disposableIncome;
+                }
+                
+                if (availableCapacity < 0) availableCapacity = 0;
+
+                // Actualizar UI
+                disposableIncomeResult.textContent = formatCurrency(disposableIncome);
+                debtRatioResult.textContent = debtRatio.toFixed(1) + '%';
+                availableCapacityResult.textContent = formatCurrency(availableCapacity);
+
+                // Indicator
+                healthIndicator.classList.remove('health-good', 'health-warning', 'health-danger');
+                if (debtRatio <= 30) {
+                    healthIndicator.classList.add('health-good');
+                    healthIndicator.textContent = "Salud Financiera: Excelente";
+                } else if (debtRatio <= 40) {
+                    healthIndicator.classList.add('health-warning');
+                    healthIndicator.textContent = "Salud Financiera: Alerta (Precaución)";
+                } else {
+                    healthIndicator.classList.add('health-danger');
+                    healthIndicator.textContent = "Salud Financiera: Peligro (Sobreendeudado)";
+                }
+            };
+
+            calculateBtn.addEventListener('click', calculateCapacity);
+
+            // Init
+            calculateCapacity();
+        });
+    </script>
+</body>
+
+</html>
