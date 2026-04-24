@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Salarial - Finanzas Personales</title>
+    <link href="../assets/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container" style="padding-top: 40px;">
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+        </a>
+
+        <h2 class="section-title" style="margin-top: 0;">Calculadora Salarial (Reglas 2026)</h2>
+        
+        <div class="calculator-container" style="grid-template-columns: 1fr 1fr;">
+            <div class="calculator-form">
+                
+                <div class="input-group">
+                    <label>Tipo de Salario</label>
+                    <div class="toggle-container">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="salaryTypeToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="salaryTypeLabel" style="margin-left: 10px; font-weight: 600;">Ordinario</span>
+                    </div>
+                    <span class="input-help">Integral aplica desde $22.761.765 COP</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="baseSalary">Salario Base Mensual</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="baseSalary" value="2.000.000" class="input-with-prefix">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="otherIncome">Otros Ingresos (Comisiones, Bonos)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="otherIncome" value="0" class="input-with-prefix">
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1.1rem; color: var(--primary-color); margin-top: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Deducciones (Retención en la Fuente)</h3>
+
+                <div class="input-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="hasDependents" style="width: auto; margin: 0;">
+                        <span>¿Tiene dependientes? (10% deducción)</span>
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label for="prepaidMedicine">Medicina Prepagada (Mensual)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="prepaidMedicine" value="0" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Tope: 16 UVT ($837.984)</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="housingInterest">Intereses de Vivienda (Mensual)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="housingInterest" value="0" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Tope: 100 UVT ($5.237.400)</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="voluntaryPension">Aportes a Fondo Voluntario (FVP / AFC)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="voluntaryPension" value="0" class="input-with-prefix">
+                    </div>
+                </div>
+                
+                <button id="calculateBtn" class="btn" style="margin-top: 20px;">Calcular Salario</button>
+            </div>
+
+            <div class="results-panel" style="justify-content: flex-start; gap: 15px;">
+                <div class="result-card">
+                    <div class="result-title">Salario Bruto (Total Ingresos)</div>
+                    <div class="result-value" id="grossSalaryResult" style="font-size: 1.8rem;">$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Deducciones de Ley (Salud, Pensión, FSP)</div>
+                    <div class="result-value" id="lawDeductionsResult" style="font-size: 1.5rem; color: #fca5a5;">-$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Retención en la Fuente</div>
+                    <div class="result-value" id="taxWithholdingResult" style="font-size: 1.5rem; color: #fca5a5;">-$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Auxilio de Transporte</div>
+                    <div class="result-value" id="transportSubsidyResult" style="font-size: 1.5rem; color: #86efac;">+$0</div>
+                </div>
+                <div class="result-card highlight" style="margin-top: auto;">
+                    <div class="result-title">Salario Mensual Neto</div>
+                    <div class="result-value" id="netSalaryResult">$0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h4 style="margin-top: 0; color: var(--primary-color);">Notas Importantes</h4>
+            <ul style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0;">
+                <li>Cálculos realizados con base en las normativas y valores de 2026 (SMLMV: $1.750.905, Auxilio de Transporte: $249.095, UVT: $52.374).</li>
+                <li><strong>Salario Integral:</strong> El salario integral incluye el factor prestacional (30%), por lo que no se liquidan cesantías, intereses ni primas adicionales. La base de cotización para seguridad social es el 70% del salario total.</li>
+                <li><strong>Retención en la Fuente:</strong> Se realiza bajo el <i>Procedimiento 1</i>, aplicando la tabla del Artículo 383 del Estatuto Tributario, considerando los límites del 40% o 1340 UVT anuales en rentas exentas y deducciones.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Constants 2026
+            const SMLMV = 1750905;
+            const AUX_TRANSPORTE = 249095;
+            const UVT = 52374;
+            const MIN_INTEGRAL = 13 * SMLMV; // 22,761,765
+
+            // Elements
+            const salaryTypeToggle = document.getElementById('salaryTypeToggle');
+            const salaryTypeLabel = document.getElementById('salaryTypeLabel');
+            const baseSalaryInput = document.getElementById('baseSalary');
+            const otherIncomeInput = document.getElementById('otherIncome');
+            const hasDependentsCheckbox = document.getElementById('hasDependents');
+            const prepaidMedicineInput = document.getElementById('prepaidMedicine');
+            const housingInterestInput = document.getElementById('housingInterest');
+            const voluntaryPensionInput = document.getElementById('voluntaryPension');
+            const calculateBtn = document.getElementById('calculateBtn');
+
+            // Result Elements
+            const grossSalaryResult = document.getElementById('grossSalaryResult');
+            const lawDeductionsResult = document.getElementById('lawDeductionsResult');
+            const taxWithholdingResult = document.getElementById('taxWithholdingResult');
+            const transportSubsidyResult = document.getElementById('transportSubsidyResult');
+            const netSalaryResult = document.getElementById('netSalaryResult');
+
+            // Format number as currency (COP)
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            };
+
+            // Input formatting
+            const setupNumberInput = (inputEl) => {
+                inputEl.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value === '') {
+                        e.target.value = '';
+                        return;
+                    }
+                    const numValue = parseInt(value, 10);
+                    e.target.value = new Intl.NumberFormat('es-CO').format(numValue);
+                    
+                    // Auto-toggle integral if base salary is high enough
+                    if(inputEl === baseSalaryInput) {
+                        if (numValue >= MIN_INTEGRAL && !salaryTypeToggle.checked) {
+                            salaryTypeToggle.checked = true;
+                            salaryTypeLabel.textContent = "Integral";
+                        } else if (numValue < MIN_INTEGRAL && salaryTypeToggle.checked) {
+                            salaryTypeToggle.checked = false;
+                            salaryTypeLabel.textContent = "Ordinario";
+                        }
+                    }
+                });
+            };
+
+            setupNumberInput(baseSalaryInput);
+            setupNumberInput(otherIncomeInput);
+            setupNumberInput(prepaidMedicineInput);
+            setupNumberInput(housingInterestInput);
+            setupNumberInput(voluntaryPensionInput);
+
+            salaryTypeToggle.addEventListener('change', () => {
+                salaryTypeLabel.textContent = salaryTypeToggle.checked ? "Integral" : "Ordinario";
+            });
+
+            // Get numeric value
+            const getNum = (inputEl) => {
+                const val = inputEl.value.replace(/\D/g, '');
+                return val ? parseInt(val, 10) : 0;
+            };
+
+            // Calculate Art 383 Table
+            const getRetencionArt383 = (baseUVT) => {
+                if (baseUVT <= 95) return 0;
+                if (baseUVT <= 150) return (baseUVT - 95) * 0.19;
+                if (baseUVT <= 360) return (baseUVT - 150) * 0.28 + 10;
+                if (baseUVT <= 640) return (baseUVT - 360) * 0.33 + 69;
+                if (baseUVT <= 945) return (baseUVT - 640) * 0.35 + 161;
+                if (baseUVT <= 2300) return (baseUVT - 945) * 0.37 + 268;
+                return (baseUVT - 2300) * 0.39 + 769;
+            };
+
+            const calculateSalary = () => {
+                const isIntegral = salaryTypeToggle.checked;
+                const baseSalary = getNum(baseSalaryInput);
+                const otherIncome = getNum(otherIncomeInput);
+                
+                const grossSalary = baseSalary + otherIncome;
+                
+                // 1. IBC (Ingreso Base de Cotización)
+                let ibc = isIntegral ? grossSalary * 0.7 : grossSalary;
+                // Tope IBC es 25 SMLMV
+                if (ibc > 25 * SMLMV) ibc = 25 * SMLMV;
+                
+                // 2. Deducciones de Ley (Salud, Pensión, FSP)
+                const salud = ibc * 0.04;
+                const pension = ibc * 0.04;
+                
+                let fsp = 0;
+                if (ibc >= 4 * SMLMV) {
+                    if (ibc < 16 * SMLMV) fsp = ibc * 0.01;
+                    else if (ibc < 17 * SMLMV) fsp = ibc * 0.012;
+                    else if (ibc < 18 * SMLMV) fsp = ibc * 0.014;
+                    else if (ibc < 19 * SMLMV) fsp = ibc * 0.016;
+                    else if (ibc < 20 * SMLMV) fsp = ibc * 0.018;
+                    else fsp = ibc * 0.02;
+                }
+                
+                const totalLawDeductions = salud + pension + fsp;
+
+                // 3. Auxilio de transporte
+                let transportSubsidy = 0;
+                if (!isIntegral && baseSalary <= 2 * SMLMV) {
+                    transportSubsidy = AUX_TRANSPORTE;
+                }
+
+                // 4. Retención en la Fuente (Procedimiento 1)
+                const prepagadaInput = getNum(prepaidMedicineInput);
+                const housingInput = getNum(housingInterestInput);
+                const voluntarias = getNum(voluntaryPensionInput);
+                const hasDependents = hasDependentsCheckbox.checked;
+
+                // INCRGO
+                const incrgo = totalLawDeductions + voluntarias;
+                const netIncome = grossSalary - incrgo;
+
+                // Deducciones
+                const deduccionSalud = Math.min(prepagadaInput, 16 * UVT);
+                const deduccionVivienda = Math.min(housingInput, 100 * UVT);
+                const deduccionDependientes = hasDependents ? Math.min(grossSalary * 0.1, 32 * UVT) : 0;
+
+                const totalDeducciones = deduccionSalud + deduccionVivienda + deduccionDependientes;
+
+                // Rentas Exentas
+                // Renta exenta laboral del 25%
+                const baseFor25 = netIncome - totalDeducciones;
+                let rentaExenta25 = baseFor25 > 0 ? baseFor25 * 0.25 : 0;
+                
+                // Limite mensual de renta exenta 25% (790 UVT anual = 65.83 UVT mensual)
+                const limit25UVT = 790 / 12 * UVT;
+                if (rentaExenta25 > limit25UVT) rentaExenta25 = limit25UVT;
+
+                const totalRentasExentas = rentaExenta25; // Asumiendo AFC y voluntarias ya en INCRGO por simplicidad de la interfaz
+
+                // Limite 40% (o 1340 UVT anual = 111.66 UVT mensual)
+                let totalDeduccionesYRentas = totalDeducciones + totalRentasExentas;
+                const max40Limit = netIncome * 0.4;
+                const maxUVTLimit = (1340 / 12) * UVT;
+                const absoluteMaxLimit = Math.min(max40Limit, maxUVTLimit);
+
+                if (totalDeduccionesYRentas > absoluteMaxLimit) {
+                    totalDeduccionesYRentas = absoluteMaxLimit;
+                }
+
+                // Base Gravable
+                const baseGravablePesos = netIncome - totalDeduccionesYRentas;
+                
+                // Convert to UVT and apply table
+                let taxWithholding = 0;
+                if (baseGravablePesos > 0) {
+                    const baseGravableUVT = baseGravablePesos / UVT;
+                    const taxUVT = getRetencionArt383(baseGravableUVT);
+                    taxWithholding = Math.round(taxUVT * UVT);
+                }
+
+                // 5. Net Salary
+                const netSalary = grossSalary - totalLawDeductions - taxWithholding - voluntarias + transportSubsidy;
+
+                // Update UI
+                grossSalaryResult.textContent = formatCurrency(grossSalary);
+                lawDeductionsResult.textContent = "-" + formatCurrency(totalLawDeductions);
+                taxWithholdingResult.textContent = "-" + formatCurrency(taxWithholding);
+                transportSubsidyResult.textContent = "+" + formatCurrency(transportSubsidy);
+                netSalaryResult.textContent = formatCurrency(netSalary);
+            };
+
+            calculateBtn.addEventListener('click', calculateSalary);
+
+            // Initial calculation
+            calculateSalary();
+        });
+    </script>
+</body>
+
+</html>

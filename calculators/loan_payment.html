@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Préstamos - Finanzas Personales</title>
+    <link href="../assets/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container" style="padding-top: 40px;">
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+        </a>
+
+        <h2 class="section-title" style="margin-top: 0;">Calculadora de Préstamos</h2>
+        
+        <div class="calculator-container">
+            <div class="calculator-form">
+                <div class="input-group">
+                    <label for="principal">Monto del Préstamo</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="principal" value="10.000.000" class="input-with-prefix">
+                    </div>
+                    <span class="input-help">Ej: 10.000.000 COP</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="interest">Tasa de Interés</label>
+                    <div class="input-wrapper" style="display: flex; gap: 10px;">
+                        <div style="flex: 1; position: relative;">
+                            <input type="number" id="interest" value="1.5" step="0.01" class="input-with-suffix">
+                            <span class="input-suffix">%</span>
+                        </div>
+                        <select id="interestType" style="flex: 1.5;">
+                            <option value="MV">Mensual Vencido (MV)</option>
+                            <option value="EA">Efectivo Anual (EA)</option>
+                        </select>
+                    </div>
+                    <span class="input-help" id="interestConversionHelp">Tasa equivalente: 19.56% EA</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="periods">Plazo del Préstamo</label>
+                    <div class="input-wrapper" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <input type="number" id="periods" value="36">
+                        </div>
+                        <select id="periodType" style="flex: 1.5;">
+                            <option value="months">Meses</option>
+                            <option value="years">Años</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button id="calculateBtn" class="btn" style="margin-top: 10px;">Calcular Cuota</button>
+            </div>
+
+            <div class="results-panel">
+                <div class="result-card highlight">
+                    <div class="result-title">Cuota Mensual Estimada</div>
+                    <div class="result-value" id="monthlyPayment">$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Total Intereses a Pagar</div>
+                    <div class="result-value" id="totalInterest">$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Pago Total (Capital + Intereses)</div>
+                    <div class="result-value" id="totalPayment">$0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const principalInput = document.getElementById('principal');
+            const interestInput = document.getElementById('interest');
+            const interestTypeSelect = document.getElementById('interestType');
+            const periodsInput = document.getElementById('periods');
+            const periodTypeSelect = document.getElementById('periodType');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const interestConversionHelp = document.getElementById('interestConversionHelp');
+
+            const monthlyPaymentEl = document.getElementById('monthlyPayment');
+            const totalInterestEl = document.getElementById('totalInterest');
+            const totalPaymentEl = document.getElementById('totalPayment');
+
+            // Format number as currency (COP)
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            };
+
+            // Format principal input dynamically
+            principalInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value === '') {
+                    e.target.value = '';
+                    return;
+                }
+                const numValue = parseInt(value, 10);
+                e.target.value = new Intl.NumberFormat('es-CO').format(numValue);
+            });
+
+            // Handle interest conversion help text
+            const updateInterestHelpText = () => {
+                const rate = parseFloat(interestInput.value);
+                if (isNaN(rate)) {
+                    interestConversionHelp.textContent = '';
+                    return;
+                }
+
+                if (interestTypeSelect.value === 'MV') {
+                    // MV to EA: EA = ((1 + i_m)^12) - 1
+                    const i_m = rate / 100;
+                    const ea = (Math.pow(1 + i_m, 12) - 1) * 100;
+                    interestConversionHelp.textContent = `Tasa equivalente: ${ea.toFixed(2)}% EA`;
+                } else {
+                    // EA to MV: MV = ((1 + i_ea)^(1/12)) - 1
+                    const i_ea = rate / 100;
+                    const mv = (Math.pow(1 + i_ea, 1 / 12) - 1) * 100;
+                    interestConversionHelp.textContent = `Tasa equivalente: ${mv.toFixed(2)}% MV`;
+                }
+            };
+
+            interestInput.addEventListener('input', updateInterestHelpText);
+            interestTypeSelect.addEventListener('change', updateInterestHelpText);
+
+            // Calculation Logic
+            const calculateLoan = () => {
+                const principalStr = principalInput.value.replace(/\D/g, '');
+                const P = parseFloat(principalStr);
+                
+                let rate = parseFloat(interestInput.value);
+                const periodsValue = parseInt(periodsInput.value, 10);
+
+                if (isNaN(P) || isNaN(rate) || isNaN(periodsValue) || P <= 0 || rate < 0 || periodsValue <= 0) {
+                    alert('Por favor, ingrese valores válidos.');
+                    return;
+                }
+
+                // Get monthly rate
+                let r;
+                if (interestTypeSelect.value === 'MV') {
+                    r = rate / 100; // Monthly rate
+                } else {
+                    // Convert EA to MV
+                    const ea = rate / 100;
+                    r = Math.pow(1 + ea, 1 / 12) - 1;
+                }
+
+                // Get total months
+                let n;
+                if (periodTypeSelect.value === 'months') {
+                    n = periodsValue;
+                } else {
+                    n = periodsValue * 12; // Years to months
+                }
+
+                let M, totalPayment, totalInterest;
+
+                if (r === 0) {
+                    M = P / n;
+                    totalPayment = P;
+                    totalInterest = 0;
+                } else {
+                    // Amortization formula: M = P[r(1+r)^n]/[(1+r)^n-1]
+                    M = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+                    totalPayment = M * n;
+                    totalInterest = totalPayment - P;
+                }
+
+                // Update UI
+                monthlyPaymentEl.textContent = formatCurrency(M);
+                totalInterestEl.textContent = formatCurrency(totalInterest);
+                totalPaymentEl.textContent = formatCurrency(totalPayment);
+            };
+
+            calculateBtn.addEventListener('click', calculateLoan);
+
+            // Initialize values and calc once
+            updateInterestHelpText();
+            calculateLoan();
+        });
+    </script>
+</body>
+
+</html>
